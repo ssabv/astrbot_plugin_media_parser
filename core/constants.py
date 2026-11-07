@@ -30,6 +30,7 @@ class Config:
     IMAGE_SEND_MODE_ORIGINAL = "保持原方式"
     IMAGE_SEND_MODE_GROUP = "多图一条"
     IMAGE_SEND_MODE_SINGLE = "逐张发送"
+    VIDEO_DURATION_LIMIT_REPLY = "视频太长了你自己看去"
     
     PLUGIN_NAME = "astrbot_plugin_media_parser"
     CACHE_DIR_NAME = "cache"
