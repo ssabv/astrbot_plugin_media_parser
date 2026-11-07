@@ -199,7 +199,7 @@ V2EX 的 `likes` 表示感谢数。匿名回复接口按楼层返回，分页参
 
 文本元数据渲染后的分页图片与原图共用发送器的图片分组逻辑，遵守 `message.media_display.image_send_mode`；分页图片按页序发送，多图一条时作为同一消息或同一转发节点。非聚合发送仅首个正文图片分组引用用户消息，引用组件不会修改原图片分组。构建失败的页面保留错误记录，其余页面继续按所选方式发送；适配器发送错误沿用逐项记录与取消传播处理。
 
-`image_send_mode` 默认“保持原方式”：普通纯图集沿用原项目的多图一条，其余混合内容、正文穿插、大媒体与分页图片逐项发送；明确配置“多图一条”或“逐张发送”时保留用户选择。时长上限默认 0、酷安默认“全部发送”；新增配置只在缺省时使用默认值，不迁移或覆盖既有配置值。
+`image_send_mode` 默认“保持原方式”：普通纯图集沿用原项目的多图一条，其余混合内容、正文穿插、大媒体与分页图片逐项发送；明确配置“多图一条”或“逐张发送”时保留用户选择。时长上限默认 0、表情回应默认关闭，酷安默认“全部发送”；新增配置只在缺省时使用默认值，不迁移或覆盖既有配置值。
 
 本地调试由 `main()` 将实际缓存目录传入 `create_local_parsers()`，构造参数注入阶段用 `Config.build_runtime_dir(cache_dir, "coolapk")` 提供酷安设备码目录，避免依赖解析器的 Docker 默认路径。设备码仍由酷安签名模块生成并持久化，重建本地解析器时复用同一标识。
 
@@ -263,7 +263,7 @@ cache/runtime_manager/bilibili/cookie.json
 
 - `TriggerConfig`：`auto_parse`、`keywords`、`reply_trigger`，提供 `should_parse()` 和 `has_keyword()`。
 - `ParserOutputConfig`：各平台输出模式，负责解析器启用、文本/富媒体输出判定。
-- `MessageConfig`：消息输出域，由 `OpeningMessageConfig`、`AggregationConfig`、`ArchiveConfig`、`MediaDisplayConfig`、`TextMetadataConfig` 和 `HotCommentConfig` 组成。
+- `MessageConfig`：消息输出域，由 `OpeningMessageConfig`、`ReactionMessageConfig`、`AggregationConfig`、`ArchiveConfig`、`MediaDisplayConfig`、`TextMetadataConfig` 和 `HotCommentConfig` 组成。
 - `PermissionConfig`：管理员、白名单、黑名单，提供 `check()`。
 - `DownloadConfig`：大小与视频时长限制、缓存目录、缓存可用性、下载并发。
 - `ParseRateLimitConfig`：同链接/同用户解析频率限制、时间窗和持久化记录文件。
@@ -486,6 +486,10 @@ parser_output.has_any_output()
 ParseRecordManager.filter_links()
   ├─ 同标准链接或同用户超出时间窗限制 -> 跳过对应链接
   └─ 允许解析 -> 写入本次解析尝试记录
+  ↓
+按 message.reaction 对原 OneBot 群消息回应一次，随机一个或按列表依次回应
+  ├─ 禁用、空列表、非 OneBot 群消息或无协议消息 ID -> 跳过回应
+  └─ 调用 set_msg_emoji_like，每次最多等待 5 秒；协议错误不阻断解析，取消向上传播
   ↓
 创建 aiohttp.ClientSession
   ↓
